@@ -1,0 +1,27 @@
+name: Contract Testing
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# https://book.getfoundry.sh/config/continuous-integration
+jobs:
+  check:
+    name: Foundry project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Download foundryup-zksync
+        run: curl -L https://raw.githubusercontent.com/matter-labs/foundry-zksync/main/install-foundry-zksync | bash
+
+      - name: Install Foundry
+        run: foundryup-zksync
+
+      - name: Run tests
+        run: cd contracts && forge test -vvv --zksync

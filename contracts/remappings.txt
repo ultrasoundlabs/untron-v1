@@ -1,0 +1,6 @@
+@sp1-contracts/=./lib/sp1-contracts/contracts/src/
+@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@matterlabs/zksync-contracts/=lib/v2-testnet-contracts/
+@ultrasoundlabs/accounts/=lib/accounts/
+forge-std/=lib/forge-std/src/
