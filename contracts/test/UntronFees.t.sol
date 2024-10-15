@@ -8,6 +8,7 @@ import "@sp1-contracts/SP1MockVerifier.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
+
 contract MockUSDT is ERC20 {
     constructor() ERC20("Mock USDT", "USDT") {}
 
@@ -22,6 +23,8 @@ contract UntronFeesTest is Test {
     MockLifi lifi;
     SP1MockVerifier sp1Verifier;
     MockUSDT usdt;
+
+    UntronTools untronTools;
 
     address admin = address(1);
 
@@ -40,6 +43,7 @@ contract UntronFeesTest is Test {
 
         // Use UntronCore since UntronFees is abstract
         untronFeesImplementation = new UntronCore();
+       
         // Prepare the initialization data
         bytes memory initData = abi.encodeWithSelector(UntronCore.initialize.selector, state);
 
@@ -80,4 +84,57 @@ contract UntronFeesTest is Test {
         vm.expectRevert();
         untronFees.setFeesVariables(relayerFee, fulfillerFee);
     }
+
+  function test_SetExtremeFees(uint256 relayerFee, uint256 fulfillerFee) public {
+    vm.assume(relayerFee <= 1000000); // Assuming max is 100% in basis points
+    vm.assume(fulfillerFee <= 1 ether); // Assuming a reasonable max fee in USDT
+
+    vm.startPrank(admin); // Ensure we are using the admin address
+    untronFees.setFeesVariables(relayerFee, fulfillerFee);
+    assertEq(untronFees.relayerFee(), relayerFee);
+    assertEq(untronFees.fulfillerFee(), fulfillerFee);
+    vm.stopPrank(); // Stop prank after setting fees
 }
+
+function test_SetZeroAndNegativeFees(int256 relayerFee, int256 fulfillerFee) public {
+    vm.assume(relayerFee < 0 || relayerFee == 0);
+    vm.assume(fulfillerFee < 0 || fulfillerFee == 0);
+
+vm.startPrank(admin);
+    if (relayerFee >= 0 && fulfillerFee >= 0) {
+        untronFees.setFeesVariables(uint256(relayerFee), uint256(fulfillerFee));
+    } else {
+        vm.expectRevert();
+        untronFees.setFeesVariables(uint256(relayerFee), uint256(fulfillerFee));
+    }
+
+vm.stopPrank();
+}
+
+
+function test_BoundaryTestingOnFees(uint256 relayerFee, uint256 fulfillerFee) public {
+    vm.assume(relayerFee >= 0 && relayerFee <= 1000000);
+    vm.assume(fulfillerFee >= 0 && fulfillerFee <= 1 ether);
+
+    vm.startPrank(admin); // Ensure we are using the admin address
+    untronFees.setFeesVariables(relayerFee, fulfillerFee);
+    
+    // Check if setting fees at boundaries works as expected
+    assertEq(untronFees.relayerFee(), relayerFee);
+    assertEq(untronFees.fulfillerFee(), fulfillerFee);
+    vm.stopPrank(); // Stop prank after setting fees
+}
+
+function test_RoleBasedAccessControl() public {
+    address nonAdmin = address(2); // Another user
+
+    vm.startPrank(nonAdmin);
+    
+    // Expect revert when non-admin tries to set fees
+    vm.expectRevert();
+    untronFees.setFeesVariables(100, 100);
+
+    vm.stopPrank();
+}
+}
+
