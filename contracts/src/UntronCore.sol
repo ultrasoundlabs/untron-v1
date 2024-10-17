@@ -66,7 +66,8 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         external
         onlyOwner
     {
-        require(_maxOrderSize > 0 &&  _requiredCollateral > 0 &&  _orderTtlMillis> 0, " Params Should be greater than 0");
+        
+    require(_maxOrderSize > 0 && _requiredCollateral > 0 && _orderTtlMillis > 0, "Parameters should be greater than zero");
      
         maxOrderSize = _maxOrderSize;
         requiredCollateral = _requiredCollateral;
@@ -129,7 +130,6 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         _updateActionChain(receiver, minDeposit, size);
     }
 
-
     /// @notice Checks if the order is expired.
     /// @param orderId The ID of the order.
     /// @return bool True if the order is expired, false otherwise.
@@ -145,13 +145,10 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         // collect collateral from the order creator
         internalTransferFrom(msg.sender, requiredCollateral);
 
-
         // amount is the amount of USDT L2 that will be taken from the provider
         // based on the order size (which is in USDT Tron) and provider's rate
         (uint256 amount,) = conversion(size, rate, false, false);
-
-        require(amount>0," Amount Should be greater Than Zero");
-        
+       require(amount > 0, "Amount should be greater than zero"); 
         uint256 providerMinDeposit = _providers[provider].minDeposit;
 
         if (isReceiverBusy[receiver] != bytes32(0)) {
@@ -419,7 +416,7 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         bytes21[] calldata receivers
     ) external {
     
-        require(liquidity >0 && rate >0 && minOrderSize >0 && minDeposit > 0,"Params Should be Greater Than Zero");
+       require(liquidity > 0 && rate > 0 && minOrderSize > 0 && minDeposit > 0, "Parameters should be greater than zero");
 
         // get provider's current liquidity
         uint256 currentLiquidity = _providers[msg.sender].liquidity;
@@ -441,7 +438,6 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         _providers[msg.sender].liquidity = liquidity;
 
         // update the provider's rate
-       
         _providers[msg.sender].rate = rate;
         require(minDeposit <= minOrderSize, "Min deposit is greater than min order size");
         // update the provider's minimum order size
