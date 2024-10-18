@@ -96,15 +96,15 @@ contract UntronFeesTest is Test {
     vm.stopPrank(); // Stop prank after setting fees
 }
 
-function test_SetZeroAndNegativeFees(int256 relayerFee, int256 fulfillerFee) public {
-    vm.assume(relayerFee < 0 || relayerFee == 0);
-    vm.assume(fulfillerFee < 0 || fulfillerFee == 0);
+function test_setFeesVariables_RevertIf_FeeIsZero(uint256 relayerFee, uint256 fulfillerFee) public {
+    vm.assume(relayerFee > 0 || relayerFee == 0);
+    vm.assume(fulfillerFee > 0 || fulfillerFee == 0);
 
 vm.startPrank(admin);
     if (relayerFee >= 0 && fulfillerFee >= 0) {
-        untronFees.setFeesVariables(uint256(relayerFee), uint256(fulfillerFee));
+        untronFees.setFeesVariables(relayerFee, fulfillerFee);
     } else { 
-        untronFees.setFeesVariables(uint256(relayerFee), uint256(fulfillerFee));
+        untronFees.setFeesVariables(relayerFee, fulfillerFee);
     }
 
 vm.stopPrank();
