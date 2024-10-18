@@ -51,7 +51,7 @@ contract UntronFeesTest is Test {
         ERC1967Proxy proxy = new ERC1967Proxy(address(untronFeesImplementation), initData);
         untronFees = UntronCore(address(proxy));
 
-        untronFees.setFeesVariables(0, 0);
+        untronFees.setFeesVariables(1, 1);
 
         vm.stopPrank();
     }
@@ -59,8 +59,8 @@ contract UntronFeesTest is Test {
     function test_setUp() public view {
         assertEq(untronFees.owner(), admin);
 
-        assertEq(untronFees.relayerFee(), 0);
-        assertEq(untronFees.fulfillerFee(), 0);
+        assertEq(untronFees.relayerFee(), 1);
+        assertEq(untronFees.fulfillerFee(), 1);
     }
 
     function test_setUntronFeesVariables_SetVariables() public {
@@ -86,8 +86,8 @@ contract UntronFeesTest is Test {
     }
 
   function test_SetExtremeFees(uint256 relayerFee, uint256 fulfillerFee) public {
-    vm.assume(relayerFee <= 1000000); // Assuming max is 100% in basis points
-    vm.assume(fulfillerFee <= 1 ether); // Assuming a reasonable max fee in USDT
+    vm.assume(relayerFee  > 0 && relayerFee <= 1000000); // Assuming max is 100% in basis points
+    vm.assume(fulfillerFee > 0 && fulfillerFee <= 1 ether); // Assuming a reasonable max fee in USDT
 
     vm.startPrank(admin); // Ensure we are using the admin address
     untronFees.setFeesVariables(relayerFee, fulfillerFee);
@@ -96,25 +96,21 @@ contract UntronFeesTest is Test {
     vm.stopPrank(); // Stop prank after setting fees
 }
 
-function test_SetZeroAndNegativeFees(int256 relayerFee, int256 fulfillerFee) public {
-    vm.assume(relayerFee < 0 || relayerFee == 0);
-    vm.assume(fulfillerFee < 0 || fulfillerFee == 0);
+function test_setFeesVariables_RevertIf_FeeIsZero() public {
+    uint256 relayerFee = 0;
+    uint256 fulfillerFee = 0;
 
-vm.startPrank(admin);
-    if (relayerFee >= 0 && fulfillerFee >= 0) {
-        untronFees.setFeesVariables(uint256(relayerFee), uint256(fulfillerFee));
-    } else {
-        vm.expectRevert();
-        untronFees.setFeesVariables(uint256(relayerFee), uint256(fulfillerFee));
-    }
+    vm.startPrank(admin);
+    vm.expectRevert();
+    untronFees.setFeesVariables(relayerFee, fulfillerFee);
+    vm.stopPrank();
 
-vm.stopPrank();
 }
 
 
 function test_BoundaryTestingOnFees(uint256 relayerFee, uint256 fulfillerFee) public {
-    vm.assume(relayerFee >= 0 && relayerFee <= 1000000);
-    vm.assume(fulfillerFee >= 0 && fulfillerFee <= 1 ether);
+    vm.assume(relayerFee > 0 && relayerFee <= 1000000);
+    vm.assume(fulfillerFee > 0 && fulfillerFee <= 1 ether);
 
     vm.startPrank(admin); // Ensure we are using the admin address
     untronFees.setFeesVariables(relayerFee, fulfillerFee);

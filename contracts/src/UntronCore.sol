@@ -66,6 +66,9 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         external
         onlyOwner
     {
+        
+    require(_maxOrderSize > 0 && _requiredCollateral > 0 && _orderTtlMillis > 0, "Parameters should be greater than zero");
+     
         maxOrderSize = _maxOrderSize;
         requiredCollateral = _requiredCollateral;
         orderTtlMillis = _orderTtlMillis;
@@ -137,7 +140,7 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
 
     /// @inheritdoc IUntronCore
     function createOrder(address provider, bytes21 receiver, uint256 size, uint256 rate, Transfer calldata transfer)
-        external
+        external 
     {
         // collect collateral from the order creator
         internalTransferFrom(msg.sender, requiredCollateral);
@@ -145,6 +148,7 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         // amount is the amount of USDT L2 that will be taken from the provider
         // based on the order size (which is in USDT Tron) and provider's rate
         (uint256 amount,) = conversion(size, rate, false, false);
+       require(amount > 0, "Amount should be greater than zero"); 
         uint256 providerMinDeposit = _providers[provider].minDeposit;
 
         if (isReceiverBusy[receiver] != bytes32(0)) {
@@ -411,6 +415,9 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         uint256 minDeposit,
         bytes21[] calldata receivers
     ) external {
+    
+       require(liquidity > 0 && rate > 0 && minOrderSize > 0 && minDeposit > 0, "Parameters should be greater than zero");
+
         // get provider's current liquidity
         uint256 currentLiquidity = _providers[msg.sender].liquidity;
 

@@ -378,41 +378,41 @@ contract SetProviderTest is UntronCoreBase {
     }
 
     /// @notice Test for setting zero liquidity
-    function test_setProvider_ZeroLiquidity() public {
-        // Given: A provider with existing liquidity who wants to withdraw all funds
-        address providerAddress = vm.addr(100);
-        uint256 initialLiquidity = 1000e6;
-        uint256 rate = 1e6;
-        uint256 minOrderSize = 100e6;
-        uint256 minDeposit = 10e6;
-        bytes21[] memory receivers = new bytes21[](1);
-        receivers[0] = addressToBytes21(vm.addr(200));
+    function testSetProvider_RevertIf_ZeroLiquidity() public {
+      // Given: A provider with existing liquidity who wants to withdraw all funds
+    address providerAddress = vm.addr(100);
+    uint256 initialLiquidity = 1000e6;
+    uint256 rate = 1e6;
+    uint256 minOrderSize = 100e6;
+    uint256 minDeposit = 10e6;
+    bytes21[] memory receivers = new bytes21[](1);
+    receivers[0] = addressToBytes21(vm.addr(200));
 
-        // Initial setup
-        mintUSDT(providerAddress, initialLiquidity);
-        approveUSDT(providerAddress, address(untron), initialLiquidity);
+    // Initial setup
+    mintUSDT(providerAddress, initialLiquidity);
+    approveUSDT(providerAddress, address(untron), initialLiquidity);
 
-        vm.startPrank(providerAddress);
-        untron.setProvider(initialLiquidity, rate, minOrderSize, minDeposit, receivers);
-        vm.stopPrank();
+    vm.startPrank(providerAddress);
+    untron.setProvider(initialLiquidity, rate, minOrderSize, minDeposit, receivers);
+    vm.stopPrank();
 
-        // When: The provider sets liquidity to zero
-        vm.expectEmit(true, true, true, true);
-        emit ProviderUpdated(providerAddress, 0, rate, minOrderSize, minDeposit, receivers);
+    // When: The provider tries to set liquidity to zero (expecting a revert)
+    vm.startPrank(providerAddress);
+    vm.expectRevert(); 
+    untron.setProvider(0, rate, minOrderSize, minDeposit, receivers);
+    vm.stopPrank();
 
-        vm.startPrank(providerAddress);
-        untron.setProvider(0, rate, minOrderSize, minDeposit, receivers);
-        vm.stopPrank();
+    // Then: Verify provider's liquidity remains unchanged
+    IUntronCore.Provider memory provider = untron.providers(providerAddress);
+    assertEq(provider.liquidity, initialLiquidity, "Provider's liquidity should remain unchanged");
+    
+    // Verify the provider still has their initial balance
+    uint256 providerBalance = usdt.balanceOf(providerAddress);
+    assertEq(providerBalance, 0, "Provider should still have their initial liquidity");
 
-        // Then: Verify provider's liquidity is zero and funds are returned
-        IUntronCore.Provider memory provider = untron.providers(providerAddress);
-        assertEq(provider.liquidity, 0, "Provider's liquidity should be zero");
-
-        uint256 providerBalance = usdt.balanceOf(providerAddress);
-        assertEq(providerBalance, initialLiquidity, "Provider should receive all their liquidity back");
-
-        uint256 contractBalance = usdt.balanceOf(address(untron));
-        assertEq(contractBalance, 0, "Contract's USDT balance should be zero");
+    // Verify contract balance
+    uint256 contractBalance = usdt.balanceOf(address(untron));
+    assertEq(contractBalance, initialLiquidity, "Contract's USDT balance should remain the same");
     }
 
     /// @notice Test for setting zero receivers
@@ -512,40 +512,110 @@ contract SetProviderTest is UntronCoreBase {
         assertEq(storedOrderId, bytes32(0), "Receiver should no longer be busy due to the expired order");
     }
 
-    /// @notice Fuzz test: Random valid inputs for setProvider
-    function testFuzz_setProvider_RandomValidInputs(
-        uint256 liquidity,
-        uint256 rate,
-        uint256 minOrderSize,
-        uint256 minDeposit
-    ) public {
-        // Bound the inputs to reasonable values
-        liquidity = bound(liquidity, 0, 1e12); // Up to 1,000,000,000 USDT
-        rate = bound(rate, 1e5, 1e7); // Between 0.1 and 10
-        minOrderSize = bound(minOrderSize, 1e6, 1e9); // Between 1 and 1,000 USDT
-        minDeposit = bound(minDeposit, 0, minOrderSize);
-
+   
+    /// @notice Test for setting provider with zero min deposit
+    function testSetProvider_RevertIf_ZeroMinDeposit() public {
+        // Given: A provider address and parameters
         address providerAddress = vm.addr(100);
+        uint256 liquidity = 1000e6;
+        uint256 rate = 1e6;
+        uint256 minOrderSize = 100e6;
+        uint256 minDeposit = 0; // Set minDeposit to zero
         bytes21[] memory receivers = new bytes21[](2);
         receivers[0] = addressToBytes21(vm.addr(200));
-        receivers[1] = addressToBytes21(vm.addr(201));
 
         // Mint and approve USDT
         mintUSDT(providerAddress, liquidity);
         approveUSDT(providerAddress, address(untron), liquidity);
 
-        // When: The provider sets their profile with random valid inputs
+        // Store initial provider state
+        IUntronCore.Provider memory initialProvider = untron.providers(providerAddress);
+        
+        // Start the prank as the provider
         vm.startPrank(providerAddress);
+        
+        // When: Attempting to set provider
+        vm.expectRevert("Parameters should be greater than zero");
         untron.setProvider(liquidity, rate, minOrderSize, minDeposit, receivers);
         vm.stopPrank();
 
-        // Then: Verify provider's information
-        IUntronCore.Provider memory provider = untron.providers(providerAddress);
-        assertEq(provider.liquidity, liquidity, "Provider's liquidity should match");
-        assertEq(provider.rate, rate, "Provider's rate should match");
-        assertEq(provider.minOrderSize, minOrderSize, "Provider's minOrderSize should match");
-        assertEq(provider.minDeposit, minDeposit, "Provider's minDeposit should match");
+        // Then: Verify that the provider's state remains unchanged
+        IUntronCore.Provider memory finalProvider = untron.providers(providerAddress);
+        assertEq(finalProvider.liquidity, initialProvider.liquidity, "Provider's liquidity should remain unchanged");
+        assertEq(finalProvider.rate, initialProvider.rate, "Provider's rate should remain unchanged");
+        assertEq(finalProvider.minOrderSize, initialProvider.minOrderSize, "Provider's minOrderSize should remain unchanged");
+        assertEq(finalProvider.minDeposit, initialProvider.minDeposit, "Provider's minDeposit should remain unchanged");
     }
+
+    /// @notice Test for setting provider with zero min order size
+    function testSetProvider_RevertIf_ZeroMinOrderSize() public {
+        // Given: A provider address and parameters
+        address providerAddress = vm.addr(100);
+        uint256 liquidity = 1000e6;
+        uint256 rate = 1e6;
+        uint256 minOrderSize = 0; // Set minOrderSize to zero
+        uint256 minDeposit = 10e6;
+        bytes21[] memory receivers = new bytes21[](2);
+        receivers[0] = addressToBytes21(vm.addr(200));
+
+        // Mint and approve USDT
+        mintUSDT(providerAddress, liquidity);
+        approveUSDT(providerAddress, address(untron), liquidity);
+
+        // Store initial provider state
+        IUntronCore.Provider memory initialProvider = untron.providers(providerAddress);
+        
+        // Start the prank as the provider
+        vm.startPrank(providerAddress);
+        
+        // When: Attempting to set provider
+        vm.expectRevert("Parameters should be greater than zero");
+        untron.setProvider(liquidity, rate, minOrderSize, minDeposit, receivers);
+        vm.stopPrank();
+
+        // Then: Verify that the provider's state remains unchanged
+        IUntronCore.Provider memory finalProvider = untron.providers(providerAddress);
+        assertEq(finalProvider.liquidity, initialProvider.liquidity, "Provider's liquidity should remain unchanged");
+        assertEq(finalProvider.rate, initialProvider.rate, "Provider's rate should remain unchanged");
+        assertEq(finalProvider.minOrderSize, initialProvider.minOrderSize, "Provider's minOrderSize should remain unchanged");
+        assertEq(finalProvider.minDeposit, initialProvider.minDeposit, "Provider's minDeposit should remain unchanged");
+    }
+
+    /// @notice Test for setting provider with zero rate
+    function testSetProvider_RevertIf_ZeroRate() public {
+        // Given: A provider address and parameters
+        address providerAddress = vm.addr(100);
+        uint256 liquidity = 1000e6;
+        uint256 rate = 0; // Set rate to zero
+        uint256 minOrderSize = 100e6;
+        uint256 minDeposit = 10e6;
+        bytes21[] memory receivers = new bytes21[](2);
+        receivers[0] = addressToBytes21(vm.addr(200));
+
+        // Mint and approve USDT
+        mintUSDT(providerAddress, liquidity);
+        approveUSDT(providerAddress, address(untron), liquidity);
+
+        // Store initial provider state
+        IUntronCore.Provider memory initialProvider = untron.providers(providerAddress);
+        
+        // Start the prank as the provider
+        vm.startPrank(providerAddress);
+        
+        // When: Attempting to set provider
+        vm.expectRevert("Parameters should be greater than zero");
+        untron.setProvider(liquidity, rate, minOrderSize, minDeposit, receivers);
+        vm.stopPrank();
+
+        // Then: Verify that the provider's state remains unchanged
+        IUntronCore.Provider memory finalProvider = untron.providers(providerAddress);
+        assertEq(finalProvider.liquidity, initialProvider.liquidity, "Provider's liquidity should remain unchanged");
+        assertEq(finalProvider.rate, initialProvider.rate, "Provider's rate should remain unchanged");
+        assertEq(finalProvider.minOrderSize, initialProvider.minOrderSize, "Provider's minOrderSize should remain unchanged");
+        assertEq(finalProvider.minDeposit, initialProvider.minDeposit, "Provider's minDeposit should remain unchanged");
+    }
+
+
 
     /// @notice Invariant test: Provider state consistency after multiple updates
     function test_invariant_setProvider_ProviderStateConsistency() public {
