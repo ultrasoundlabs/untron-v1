@@ -3,12 +3,11 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IUntronFees.sol";
-import "./UntronTools.sol";
 
 /// @title Module for calculating fees in Untron protocol.
 /// @author Ultrasound Labs
 /// @notice This contract implements logic for calculating over fees and rates in Untron protocol.
-abstract contract UntronFees is IUntronFees, UntronTools, OwnableUpgradeable {
+abstract contract UntronFees is IUntronFees, OwnableUpgradeable {
     /// @notice The number of basis points in 100%.
     uint256 constant bp = 1000000; // min 0.000001 i.e 0.0001%. made for consistency with usdt decimals
 
@@ -18,7 +17,7 @@ abstract contract UntronFees is IUntronFees, UntronTools, OwnableUpgradeable {
 
     function _setFeesVariables(uint256 _relayerFee, uint256 _fulfillerFee) internal {
         require(_relayerFee > 0 && _fulfillerFee > 0, "Relayer fee must be greater than zero");
-   
+
         relayerFee = _relayerFee;
         fulfillerFee = _fulfillerFee;
     }
