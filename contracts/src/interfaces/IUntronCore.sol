@@ -173,7 +173,8 @@ interface IUntronCore is IUntronTransfers, IUntronFees, IUntronZK {
     /// @notice Closes the orders and sends the funds to the providers or order creators, if not fulfilled.
     /// @param proof The ZK proof.
     /// @param publicValues The public values for the proof and order closure.
-    function closeOrders(bytes calldata proof, bytes calldata publicValues) external;
+    /// @param newState The new state of the ZK engine.
+    function closeOrders(bytes calldata proof, bytes calldata publicValues, bytes calldata newState) external;
 
     /// @notice Sets the liquidity provider details.
     /// @param liquidity The liquidity of the provider in USDT L2.

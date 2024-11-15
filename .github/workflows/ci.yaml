@@ -17,11 +17,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download foundryup-zksync
-        run: curl -L https://raw.githubusercontent.com/matter-labs/foundry-zksync/main/install-foundry-zksync | bash
-
       - name: Install Foundry
-        run: foundryup-zksync
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
 
       - name: Run tests
-        run: cd contracts && forge test -vvv --zksync
+        run: forge test -vvv

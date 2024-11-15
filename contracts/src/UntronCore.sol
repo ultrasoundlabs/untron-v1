@@ -316,10 +316,8 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         }
     }
 
-    /// @notice Closes the orders and sends the funds to the providers or order creators, if not fulfilled.
-    /// @param proof The ZK proof.
-    /// @param publicValues The public values for the proof and order closure.
-    function closeOrders(bytes calldata proof, bytes calldata publicValues) external {
+    /// @inheritdoc IUntronCore
+    function closeOrders(bytes calldata proof, bytes calldata publicValues, bytes calldata newState) external {
         // verify the ZK proof with the public values
         // verifying logic is defined in the UntronZK contract.
         // currently it wraps SP1 zkVM verifier.
@@ -339,6 +337,10 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         // check that the old state hash is equal to the current state hash
         // this is needed to prevent the relayer from modifying the state in the ZK program.
         require(oldStateHash == stateHash, "Old state hash is invalid");
+        // check that the new state is valid
+        // we need to pass the new state in the calldata for easy state reconstruction by the relayers.
+        // on ZKsync Era (our deployment chain), the calldata is not published to the L1, so it's cheap to pass.
+        require(newStateHash == sha256(newState), "New state is invalid");
 
         // update the state hash
         stateHash = newStateHash;
