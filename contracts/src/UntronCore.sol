@@ -5,7 +5,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IUntronCore.sol";
 import "./UntronTransfers.sol";
-import "./UntronTools.sol";
 import "./UntronFees.sol";
 import "./UntronZK.sol";
 
@@ -66,9 +65,11 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         external
         onlyOwner
     {
-        
-    require(_maxOrderSize > 0 && _requiredCollateral > 0 && _orderTtlMillis > 0, "Parameters should be greater than zero");
-     
+        require(
+            _maxOrderSize > 0 && _requiredCollateral > 0 && _orderTtlMillis > 0,
+            "Parameters should be greater than zero"
+        );
+
         maxOrderSize = _maxOrderSize;
         requiredCollateral = _requiredCollateral;
         orderTtlMillis = _orderTtlMillis;
@@ -107,13 +108,12 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         returns (bytes32 _actionChainTip)
     {
         // action chain is a hash chain of the order-related, onchain-initiated actions.
-        // Action consists of timestamp in Tron format, Tron receiver address, minimum deposit amount, and order size.
+        // Action consists of timestamp, Tron receiver address, minimum deposit amount, and order size.
         // It's used to start and stop orders. If the order is stopped, minimum deposit amount is not used.
-        // We're utilizing Tron timestamp to enforce the ZK program to follow all Untron actions respective to the Tron blockchain.
+        // We're utilizing timestamp to enforce the ZK program to follow all Untron actions respective to the Tron blockchain.
         // ABI: (bytes32, uint256, address, uint256, uint256)
-        uint256 tronTimestamp = unixToTron(block.timestamp);
-        _actionChainTip = sha256(abi.encode(actionChainTip, tronTimestamp, receiver, minDeposit, size));
-        emit ActionChainUpdated(actionChainTip, tronTimestamp, receiver, minDeposit, size);
+        _actionChainTip = sha256(abi.encode(actionChainTip, block.timestamp, receiver, minDeposit, size));
+        emit ActionChainUpdated(actionChainTip, block.timestamp, receiver, minDeposit, size);
 
         // actionChainTip stores the latest action (aka order id), that is, the tip of the action chain.
         actionChainTip = _actionChainTip;
@@ -135,12 +135,12 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
     /// @return bool True if the order is expired, false otherwise.
     /// @dev The order is expired if the current timestamp is greater than the order timestamp + orderTtlMillis.
     function isOrderExpired(bytes32 orderId) internal view returns (bool) {
-        return _orders[orderId].timestamp + orderTtlMillis < unixToTron(block.timestamp);
+        return _orders[orderId].timestamp + orderTtlMillis < block.timestamp;
     }
 
     /// @inheritdoc IUntronCore
     function createOrder(address provider, bytes21 receiver, uint256 size, uint256 rate, Transfer calldata transfer)
-        external 
+        external
     {
         // collect collateral from the order creator
         internalTransferFrom(msg.sender, requiredCollateral);
@@ -148,7 +148,7 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         // amount is the amount of USDT L2 that will be taken from the provider
         // based on the order size (which is in USDT Tron) and provider's rate
         (uint256 amount,) = conversion(size, rate, false, false);
-       require(amount > 0, "Amount should be greater than zero"); 
+        require(amount > 0, "Amount should be greater than zero");
         uint256 providerMinDeposit = _providers[provider].minDeposit;
 
         if (isReceiverBusy[receiver] != bytes32(0)) {
@@ -171,10 +171,9 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         bytes32 orderId = _updateActionChain(receiver, providerMinDeposit, size);
         // set the receiver as busy to prevent double orders
         isReceiverBusy[receiver] = orderId;
-        uint256 timestamp = unixToTron(block.timestamp);
         // store the order details in storage
         _orders[orderId] = Order({
-            timestamp: timestamp,
+            timestamp: block.timestamp,
             creator: msg.sender,
             provider: provider,
             receiver: receiver,
@@ -187,7 +186,7 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         });
 
         // Emit OrderCreated event
-        emit OrderCreated(orderId, timestamp, msg.sender, provider, receiver, size, rate, providerMinDeposit);
+        emit OrderCreated(orderId, block.timestamp, msg.sender, provider, receiver, size, rate, providerMinDeposit);
     }
 
     /// @inheritdoc IUntronCore
@@ -206,8 +205,7 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
     /// @inheritdoc IUntronCore
     function stopOrder(bytes32 orderId) external {
         require(
-            _orders[orderId].creator == msg.sender && !_orders[orderId].isFulfilled,
-            "Only creator can stop the order"
+            _orders[orderId].creator == msg.sender && !_orders[orderId].isFulfilled, "Only creator can stop the order"
         );
         require(!isOrderExpired(orderId), "Cannot stop an expired order");
 
@@ -415,8 +413,9 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         uint256 minDeposit,
         bytes21[] calldata receivers
     ) external {
-    
-       require(liquidity > 0 && rate > 0 && minOrderSize > 0 && minDeposit > 0, "Parameters should be greater than zero");
+        require(
+            liquidity > 0 && rate > 0 && minOrderSize > 0 && minDeposit > 0, "Parameters should be greater than zero"
+        );
 
         // get provider's current liquidity
         uint256 currentLiquidity = _providers[msg.sender].liquidity;

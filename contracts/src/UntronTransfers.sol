@@ -5,10 +5,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./interfaces/external/V3SpokePoolInterface.sol";
-import "./interfaces/external/IAggregationRouterV6.sol";
 import "./interfaces/IUntronTransfers.sol";
-import "./UntronTools.sol";
 
 /// @title Extensive pausable transfer module for Untron
 /// @author Ultrasound Labs
@@ -20,13 +17,7 @@ import "./UntronTools.sol";
 ///      so it supports on-the-fly swaps of USDT L2 to other coins and cross-chain transfers through Across bridge.
 ///      Only this module must be used to manage the funds in the Untron protocol,
 ///      as it contains the pausing logic in case of emergency.
-abstract contract UntronTransfers is
-    IUntronTransfers,
-    UntronTools,
-    Initializable,
-    PausableUpgradeable,
-    OwnableUpgradeable
-{
+abstract contract UntronTransfers is IUntronTransfers, Initializable, PausableUpgradeable, OwnableUpgradeable {
     function pause() external onlyOwner {
         _pause();
     }
