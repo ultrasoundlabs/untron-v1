@@ -21,24 +21,24 @@ contract CloseOrdersTest is UntronCoreBase {
         IUntronCore.Order memory createdOrder = getOrderFromContext(orderId);
 
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         // Closed order inflow is equal to order size
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
         closedOrders[0] = IUntronCore.Inflow({ order: orderId, inflow: createdOrder.size });
 
-        bytes memory publicValues = abi.encode(oldStateHash, newStateHash, latestIncludedAction, closedOrders);
+        bytes memory publicValues = abi.encode(oldStateHash, sha256(newState), latestIncludedAction, closedOrders);
         bytes memory proof = ""; // Assuming proof verification is mocked
 
         // Capture events
         vm.expectEmit();
         emit OrderClosed(orderId, address(this));
         vm.expectEmit();
-        emit RelayUpdated(address(this), newStateHash);
+        emit RelayUpdated(address(this), sha256(newState));
 
         // When
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
 
         // Then
         // Verify that the order is deleted
@@ -51,7 +51,7 @@ contract CloseOrdersTest is UntronCoreBase {
         assertEq(createdProvider.liquidity, expectedRemainingLiquidity, "Provider liquidity should be updated");
 
         // Verify that the state hash is updated
-        assertEq(untron.stateHash(), newStateHash, "State hash should be updated");
+        assertEq(untron.stateHash(), sha256(newState), "State hash should be updated");
 
         // Verify that total fee is transferred to the protocol owner
         uint256 ownerBalance = usdt.balanceOf(untron.owner());
@@ -80,24 +80,24 @@ contract CloseOrdersTest is UntronCoreBase {
         IUntronCore.Order memory createdOrder = getOrderFromContext(orderId);
 
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         // Closed order inflow is equal to order size
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
         closedOrders[0] = IUntronCore.Inflow({ order: orderId, inflow: createdOrder.size });
 
-        bytes memory publicValues = abi.encode(oldStateHash, newStateHash, latestIncludedAction, closedOrders);
+        bytes memory publicValues = abi.encode(oldStateHash, sha256(newState), latestIncludedAction, closedOrders);
         bytes memory proof = ""; // Assuming proof verification is mocked
 
         // Capture events
         vm.expectEmit();
         emit OrderClosed(orderId, address(this));
         vm.expectEmit();
-        emit RelayUpdated(address(this), newStateHash);
+        emit RelayUpdated(address(this), sha256(newState));
 
         // When
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
 
         // Then
         // Verify that the order is deleted
@@ -110,7 +110,7 @@ contract CloseOrdersTest is UntronCoreBase {
         assertEq(createdProvider.liquidity, expectedRemainingLiquidity, "Provider liquidity should be updated");
 
         // Verify that the state hash is updated
-        assertEq(untron.stateHash(), newStateHash, "State hash should be updated");
+        assertEq(untron.stateHash(), sha256(newState), "State hash should be updated");
 
         // Verify that total fee is transferred to the protocol owner
         uint256 ownerBalance = usdt.balanceOf(untron.owner());
@@ -141,7 +141,7 @@ contract CloseOrdersTest is UntronCoreBase {
         IUntronCore.Order memory createdOrder = getOrderFromContext(orderId);
 
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
@@ -149,7 +149,7 @@ contract CloseOrdersTest is UntronCoreBase {
 
         bytes memory publicValues = abi.encode(
             oldStateHash,
-            newStateHash,
+            sha256(newState),
             latestIncludedAction,
             closedOrders
         );
@@ -159,10 +159,10 @@ contract CloseOrdersTest is UntronCoreBase {
         vm.expectEmit();
         emit OrderClosed(orderId, address(this));
         vm.expectEmit();
-        emit RelayUpdated(address(this), newStateHash);
+        emit RelayUpdated(address(this), sha256(newState));
 
         // **Call closeOrders**
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
 
         // **Verifications:**
 
@@ -215,7 +215,7 @@ contract CloseOrdersTest is UntronCoreBase {
         // 7. **State Hash is Updated**
         assertEq(
             untron.stateHash(),
-            newStateHash,
+            sha256(newState),
             "State hash should be updated"
         );
 
@@ -248,7 +248,7 @@ contract CloseOrdersTest is UntronCoreBase {
 
         // **Prepare publicValues for closeOrders**
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
@@ -256,7 +256,7 @@ contract CloseOrdersTest is UntronCoreBase {
 
         bytes memory publicValues = abi.encode(
             oldStateHash,
-            newStateHash,
+            sha256(newState),
             latestIncludedAction,
             closedOrders
         );
@@ -269,10 +269,10 @@ contract CloseOrdersTest is UntronCoreBase {
         vm.expectEmit();
         emit OrderClosed(orderId, address(this));
         vm.expectEmit();
-        emit RelayUpdated(address(this), newStateHash);
+        emit RelayUpdated(address(this), sha256(newState));
 
         // **Call closeOrders**
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
 
         // **Verifications:**
 
@@ -351,7 +351,7 @@ contract CloseOrdersTest is UntronCoreBase {
 
         // Prepare public values
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         // Closed orders
@@ -359,11 +359,11 @@ contract CloseOrdersTest is UntronCoreBase {
         closedOrders[0] = IUntronCore.Inflow({ order: orderId1, inflow: 5e6 }); // Partial inflow
         closedOrders[1] = IUntronCore.Inflow({ order: orderId2, inflow: 10e6 }); // Full inflow
 
-        bytes memory publicValues = abi.encode(oldStateHash, newStateHash, latestIncludedAction, closedOrders);
+        bytes memory publicValues = abi.encode(oldStateHash, sha256(newState), latestIncludedAction, closedOrders);
         bytes memory proof = ""; // Assuming proof verification is mocked
 
         // Call closeOrders
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
 
         // Verify orders are deleted
         IUntronCore.Order memory order1 = untron.orders(orderId1);
@@ -431,18 +431,18 @@ contract CloseOrdersTest is UntronCoreBase {
 
         // Prepare public values
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         // Closed order inflow is zero
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
         closedOrders[0] = IUntronCore.Inflow({order: orderId, inflow: 0});
 
-        bytes memory publicValues = abi.encode(oldStateHash, newStateHash, latestIncludedAction, closedOrders);
+        bytes memory publicValues = abi.encode(oldStateHash, sha256(newState), latestIncludedAction, closedOrders);
         bytes memory proof = ""; // Assuming proof verification is mocked
 
         // Call closeOrders
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
 
         // Verify that the order is deleted
         IUntronCore.Order memory order = untron.orders(orderId);
@@ -461,7 +461,7 @@ contract CloseOrdersTest is UntronCoreBase {
         assertEq(orderCreatorBalance, 0, "Order creator should have no balance");
 
         // Verify that the state hash is updated
-        assertEq(untron.stateHash(), newStateHash, "State hash should be updated");
+        assertEq(untron.stateHash(), sha256(newState), "State hash should be updated");
     }
 
     function test_closeOrders_SuccessfulSinglePendingOrderClosureWithPartialInflow() public {
@@ -474,7 +474,7 @@ contract CloseOrdersTest is UntronCoreBase {
 
         // Prepare public values
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         // Closed order inflow is less than the order size
@@ -482,11 +482,11 @@ contract CloseOrdersTest is UntronCoreBase {
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
         closedOrders[0] = IUntronCore.Inflow({order: orderId, inflow: partialInflow});
 
-        bytes memory publicValues = abi.encode(oldStateHash, newStateHash, latestIncludedAction, closedOrders);
+        bytes memory publicValues = abi.encode(oldStateHash, sha256(newState), latestIncludedAction, closedOrders);
         bytes memory proof = ""; // Assuming proof verification is mocked
 
         // Call closeOrders
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
 
         // Verify that the order is deleted
         IUntronCore.Order memory order = untron.orders(orderId);
@@ -509,7 +509,7 @@ contract CloseOrdersTest is UntronCoreBase {
         assertEq(orderCreatorBalance, collateral, "Order creator should receive collateral refund");
 
         // Verify that the state hash is updated
-        assertEq(untron.stateHash(), newStateHash, "State hash should be updated");
+        assertEq(untron.stateHash(), sha256(newState), "State hash should be updated");
     }
 
     function test_closeOrders_SuccessfulSinglePendingOrderClosureWithCustomParams() public {
@@ -534,24 +534,24 @@ contract CloseOrdersTest is UntronCoreBase {
 
         // Prepare public values
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         // Closed order inflow is equal to order size
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
         closedOrders[0] = IUntronCore.Inflow({ order: orderId, inflow: createdOrder.size });
 
-        bytes memory publicValues = abi.encode(oldStateHash, newStateHash, latestIncludedAction, closedOrders);
+        bytes memory publicValues = abi.encode(oldStateHash, sha256(newState), latestIncludedAction, closedOrders);
         bytes memory proof = ""; // Assuming proof verification is mocked
 
         // Capture events
         vm.expectEmit();
         emit OrderClosed(orderId, address(this));
         vm.expectEmit();
-        emit RelayUpdated(address(this), newStateHash);
+        emit RelayUpdated(address(this), sha256(newState));
 
         // When
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
 
         // Then
         // Verify that the order is deleted
@@ -564,7 +564,7 @@ contract CloseOrdersTest is UntronCoreBase {
         assertEq(createdProvider.liquidity, expectedRemainingLiquidity, "Provider liquidity should be updated");
 
         // Verify that the state hash is updated
-        assertEq(untron.stateHash(), newStateHash, "State hash should be updated");
+        assertEq(untron.stateHash(), sha256(newState), "State hash should be updated");
 
         // Verify that total fee is transferred to the protocol owner
         uint256 ownerBalance = usdt.balanceOf(untron.owner());
@@ -595,18 +595,18 @@ contract CloseOrdersTest is UntronCoreBase {
 
         // Prepare public values with incorrect old state hash
         bytes32 oldStateHash = keccak256("invalid_state_hash");
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
         closedOrders[0] = IUntronCore.Inflow({ order: orderId, inflow: order.size });
 
-        bytes memory publicValues = abi.encode(oldStateHash, newStateHash, latestIncludedAction, closedOrders);
+        bytes memory publicValues = abi.encode(oldStateHash, sha256(newState), latestIncludedAction, closedOrders);
         bytes memory proof = ""; // Assuming proof verification is mocked
 
         // Expect revert
         vm.expectRevert("Old state hash is invalid");
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
     }
 
     function test_closeOrders_RevertIf_InvalidLatestIncludedAction() public {
@@ -620,18 +620,18 @@ contract CloseOrdersTest is UntronCoreBase {
 
         // Prepare public values with invalid latestIncludedAction
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = bytes32("invalid_action"); // Invalid action
 
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
         closedOrders[0] = IUntronCore.Inflow({ order: orderId, inflow: order.size });
 
-        bytes memory publicValues = abi.encode(oldStateHash, newStateHash, latestIncludedAction, closedOrders);
+        bytes memory publicValues = abi.encode(oldStateHash, sha256(newState), latestIncludedAction, closedOrders);
         bytes memory proof = ""; // Assuming proof verification is mocked
 
         // Expect revert
         vm.expectRevert("Latest included action is invalid");
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
     }
 
     // Fuzz Test: Random inflows and order sizes
@@ -649,7 +649,7 @@ contract CloseOrdersTest is UntronCoreBase {
 
         // Prepare public values
         bytes32 oldStateHash = untron.stateHash();
-        bytes32 newStateHash = keccak256(abi.encodePacked(oldStateHash, "new_state"));
+        bytes memory newState = abi.encodePacked(oldStateHash, "new_state");
         bytes32 latestIncludedAction = untron.actionChainTip();
 
         // Ensure inflow does not exceed order size
@@ -658,11 +658,11 @@ contract CloseOrdersTest is UntronCoreBase {
         IUntronCore.Inflow[] memory closedOrders = new IUntronCore.Inflow[](1);
         closedOrders[0] = IUntronCore.Inflow({ order: orderId, inflow: adjustedInflow });
 
-        bytes memory publicValues = abi.encode(oldStateHash, newStateHash, latestIncludedAction, closedOrders);
+        bytes memory publicValues = abi.encode(oldStateHash, sha256(newState), latestIncludedAction, closedOrders);
         bytes memory proof = ""; // Assuming proof verification is mocked
 
         // Call closeOrders
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
         // Verify that the order is deleted
         IUntronCore.Order memory deletedOrder = untron.orders(orderId);
         assertEq(deletedOrder.creator, address(0), "Order should be deleted");

@@ -232,17 +232,18 @@ abstract contract TestContext is UntronCoreUtils {
                 order: orderId,
                 inflow: _orderParams.wasFulfilledBeforeClosing ? _orderParams.size : 0
             });
+            bytes memory newState = abi.encodePacked(stateHash(), "new_state");
             // Prepare public values
             bytes memory publicValues = abi.encode(
                 stateHash(),     // actionChainTip
-                bytes32(uint256(1)),         // newStateHash
+                sha256(newState),         // newStateHash
                 actionChainTip(),     // latestIncludedAction
                 closedOrders                 // closedOrders
             );
             bytes memory proof = abi.encodePacked(bytes32(0)); // Correctly initialized proof
 
             // Close orders
-            closeOrders(proof, publicValues);
+            closeOrders(proof, publicValues, newState);
         }
 
         return orderId;

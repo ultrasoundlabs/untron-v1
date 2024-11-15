@@ -195,10 +195,11 @@ abstract contract UntronCoreUtils is Test {
     /// @notice Closes orders by providing a proof and public values.
     function closeOrders(
         bytes memory proof,
-        bytes memory publicValues
+        bytes memory publicValues,
+        bytes memory newState
     ) public {
         vm.startPrank(admin);
-        untron.closeOrders(proof, publicValues);
+        untron.closeOrders(proof, publicValues, newState);
         vm.stopPrank();
     }
 
