@@ -12,17 +12,15 @@ contract MockSP1Verifier {
     }
 }
 
-contract DeployMainnetScript is Script {
+contract DeployProxyScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address implementation = vm.envAddress("IMPLEMENTATION");
         bytes memory state = vm.envBytes("GENESIS_STATE");
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy mock verifier
         MockSP1Verifier mockVerifier = new MockSP1Verifier();
-
-        // Deploy implementation
-        UntronCore implementation = new UntronCore();
 
         // Deploy proxy
         bytes memory initData = abi.encodeWithSelector(
