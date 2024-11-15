@@ -65,11 +65,6 @@ contract UntronCore is Initializable, OwnableUpgradeable, UntronTransfers, Untro
         external
         onlyOwner
     {
-        require(
-            _maxOrderSize > 0 && _requiredCollateral > 0 && _orderTtlMillis > 0,
-            "Parameters should be greater than zero"
-        );
-
         maxOrderSize = _maxOrderSize;
         requiredCollateral = _requiredCollateral;
         orderTtlMillis = _orderTtlMillis;

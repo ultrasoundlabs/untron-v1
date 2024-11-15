@@ -16,8 +16,6 @@ abstract contract UntronFees is IUntronFees, OwnableUpgradeable {
     uint256 public fulfillerFee; // USDT L2
 
     function _setFeesVariables(uint256 _relayerFee, uint256 _fulfillerFee) internal {
-        require(_relayerFee > 0 && _fulfillerFee > 0, "Relayer fee must be greater than zero");
-
         relayerFee = _relayerFee;
         fulfillerFee = _fulfillerFee;
     }
