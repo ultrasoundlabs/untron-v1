@@ -39,8 +39,8 @@ contract FulfillOrdersTest is UntronCoreBase {
         vm.startPrank(fulfiller);
         // **Capture the OrderFulfilled event**
         vm.expectEmit();
-        emit ActionChainUpdated(orderId, block.timestamp * 1000 - 170539755000, receiver, 0, 0);
-        vm.expectEmit();
+        emit ActionChainUpdated(orderId, block.timestamp, receiver, 0, 0);
+         vm.expectEmit();
         emit ReceiverFreed(provider, receiver);
         vm.expectEmit();
         emit OrderFulfilled(orderId, fulfiller);
@@ -48,9 +48,9 @@ contract FulfillOrdersTest is UntronCoreBase {
         untron.fulfill(orderIds, totalExpectedExpense);
         vm.stopPrank();
 
-        // **Verifications:**
+//        **Verifications:**
 
-        // **1. Order State Verification**
+  //      **1. Order State Verification**
         IUntronCore.Order memory order = untron.orders(orderId);
         assertEq(order.isFulfilled, true, "Order should be marked as fulfilled");
 
@@ -109,8 +109,8 @@ contract FulfillOrdersTest is UntronCoreBase {
         assertEq(order.size, order.size, "Order's size should remain unchanged");
         assertEq(order.rate, DEFAULT_RATE, "Order's rate should remain unchanged");
 
-        // **10. Action Chain Integrity**
-        // If the fulfill function updates the action chain, verify its integrity
+        //  **10. Action Chain Integrity**
+        //  If the fulfill function updates the action chain, verify its integrity
         // Assuming the action chain is updated in the fulfill function, we can verify it here
         // For example:
         // bytes32 expectedActionChainTip = ...; // Calculate expected action chain tip

@@ -93,12 +93,11 @@ contract UntronFeesTest is Test {
         vm.stopPrank(); // Stop prank after setting fees
     }
 
-    function test_setFeesVariables_RevertIf_FeeIsZero() public {
+    function test_setFeesVariables_wontRevert_If_FeeIsZero() public {
         uint256 relayerFee = 0;
         uint256 fulfillerFee = 0;
 
         vm.startPrank(admin);
-        vm.expectRevert();
         untronFees.setFeesVariables(relayerFee, fulfillerFee);
         vm.stopPrank();
     }

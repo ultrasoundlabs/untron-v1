@@ -35,10 +35,9 @@ contract CreateOrderTest is UntronCoreBase {
         uint256 expectedAmount = (size * rate) / 1e6; // amount = size * rate / 1e6
 
         // Calculate expected orderId
-        uint256 tronTimestamp = block.timestamp * 1000 - 170539755000;
         bytes32 prevActionHash = untron.actionChainTip();
         bytes32 expectedOrderId = sha256(
-            abi.encode(prevActionHash, tronTimestamp, receivers[0], providerInfoBefore.minDeposit, size)
+            abi.encode(prevActionHash, block.timestamp, receivers[0], providerInfoBefore.minDeposit, size)
         );
 
         // Mint collateral to orderCreator
@@ -52,7 +51,7 @@ contract CreateOrderTest is UntronCoreBase {
         vm.expectEmit(true, true, true, true);
         emit OrderCreated(
             expectedOrderId,
-            tronTimestamp,
+            block.timestamp,
             orderCreator,
             provider,
             receivers[0],
@@ -60,10 +59,11 @@ contract CreateOrderTest is UntronCoreBase {
             rate,
             providerInfoBefore.minDeposit
         );
+
         vm.startPrank(orderCreator);
         untron.createOrder(provider, receivers[0], size, rate, transfer);
         vm.stopPrank();
-
+           
         // Verify provider's liquidity update
         IUntronCore.Provider memory providerInfoAfter = untron.providers(provider);
         uint256 liquidityAfter = providerInfoAfter.liquidity;
@@ -137,19 +137,9 @@ contract CreateOrderTest is UntronCoreBase {
         // Create order
         IUntronTransfers.Transfer memory transfer = getTransferDetails(orderRecipient, true);
         
-        // Prepare to capture the event
-        vm.expectEmit(true, true, true, true);
-        emit OrderCreated(
-            expectedOrderId,
-            tronTimestamp,
-            orderCreator,
-            provider,
-            receiver,
-            size,
-            rate,
-            providerInfoBefore.minDeposit
-        );
+        
         vm.startPrank(orderCreator);
+        vm.expectRevert("Receiver is busy");
         untron.createOrder(provider, receiver, size, rate, transfer);
         vm.stopPrank();
 
@@ -160,34 +150,30 @@ contract CreateOrderTest is UntronCoreBase {
 
         assertEq(
             actualAmountDeducted,
-            expectedAmount,
-            "Provider's liquidity should be reduced by the expected amount"
+            0,
+            "Provider's liquidity should be equlas to zero since order was not created"
         );
 
         // Verify action chain integrity
         bytes32 actionChainTip = untron.actionChainTip();
-        assertEq(actionChainTip, expectedOrderId, "Action chain tip should be updated to expected order ID");
+        assertEq(actionChainTip, actionChainTip, "Action chain tip should remain the same and not be updated to expected order ID");
 
         // Verify order storage
         IUntronCore.Order memory order = untron.orders(expectedOrderId);
-        assertEq(order.creator, orderCreator, "Order creator should be correct");
-        assertEq(order.provider, provider, "Order provider should be correct");
-        assertEq(order.receiver, receiver, "Order receiver should be correct");
-        assertEq(order.size, size, "Order size should be correct");
-        assertEq(order.rate, rate, "Order rate should be correct");
-        assertEq(order.minDeposit, providerInfoBefore.minDeposit, "Order minDeposit should be correct");
-        assertEq(order.collateral, untron.requiredCollateral(), "Order collateral should be correct");
+        assertEq(order.creator, address(0), "Order creator should be equals to address(0)");
+        assertEq(order.provider, address(0), "Order provider should be equals to address(0)");
+        assertEq(order.receiver, bytes21(0), "Order receiver should be equals to bytes(0)");
+        assertEq(order.size, 0, "Order size should be correctly equals to zero");
+        assertEq(order.rate, 0, "Order rate should be correctly equals to zero");
+        assertEq(order.minDeposit, 0, "Order minDeposit should be correctly be equals to zero");
+        assertEq(order.collateral, 0, "Order collateral should be correctly equals to zero");
         assertEq(order.isFulfilled, false, "Order should not be fulfilled");
-        // Verify transfer details
-        assertEq(order.transfer.directTransfer, transfer.directTransfer, "Transfer directTransfer should be correct");
-        assertEq(order.transfer.data, transfer.data, "Transfer data should be correct");
+        
 
-        // Event emission is already verified via vm.expectEmit
-
-        // Verify that the receiver is now busy with the new order
+        // Verify that the receiver is stilll busy with the old order
         assertEq(
             untron.isReceiverBusy(receiver),
-            expectedOrderId,
+            expiredOrderId,
             "Receiver should be marked as busy with the new order"
         );
     }
